@@ -1,20 +1,16 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"backend/pkg/handlers"
+	"log"
+	"net/http"
 )
 
 func main() {
-    // Initialize server settings or configurations
-    fmt.Println("Starting server...")
+	http.HandleFunc("/search_song", handlers.SearchSongHandler)
+	http.HandleFunc("/rate_song", handlers.RateSongHandler)
+	http.HandleFunc("/predict", handlers.PredictHandler)
 
-    // Set up routes and handlers (using your services, etc.)
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello, Statify!")
-    })
-
-    // Start the server
-    log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server is running on port 4567")
+	log.Fatal(http.ListenAndServe(":4567", nil))
 }
