@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  go-backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "4567:4567"
+    networks:
+      - app-network
+
+  flask-backend:
+    build:
+      context: ./ml_models
+    container_name: ml_models
+    ports:
+      - "5000:5000"
+    depends_on:
+      - go-backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
