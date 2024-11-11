@@ -1,19 +1,25 @@
 package services
 
 import (
+	"backend/pkg/models"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
-	"context"
 	"fmt"
+	"log"
 	"net/http"
-	"backend/pkg/models"
+	"net/url"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-const spotifyClientID = "e113dc056db54c8d8f39dd670061eb0c"
-const spotifyClientSecret = "7b873f8a97244f9eb937c5fa3b3c0e93"
-const flaskURL = "http://localhost:5000/predict"
+const (
+	spotifyClientID = "e113dc056db54c8d8f39dd670061eb0c"
+	spotifyClientSecret = "7b873f8a97244f9eb937c5fa3b3c0e93"
+	spotifyAPIBase = "https://api.spotify.com/v1/search"
+	flaskURL = "http://localhost:5000/predict"
+)
 
 // GetSong retrieves a song from the database.
 func GetSong(songName, artistName string) (models.Song, error) {
@@ -26,12 +32,24 @@ func GetSong(songName, artistName string) (models.Song, error) {
 // GetSpotifyTrackDetails fetches song details from Spotify API.
 func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	accessToken, err := getSpotifyAccessToken()
+
 	if err != nil {
 		return models.Song{}, err
 	}
 
-	spotifyURL := fmt.Sprintf("https://api.spotify.com/v1/search?q=track:%s artist:%s&type=track", songName, artistName)
-	req, _ := http.NewRequest("GET", spotifyURL, nil)
+
+	baseURL := "https://api.spotify.com/v1/search"
+	params := url.Values{}
+	query := fmt.Sprintf("track:%s artist:%s", songName, artistName)
+	params.Add("q", query)
+	params.Add("type", "track")
+	searchURL := fmt.Sprintf("%s?%s", baseURL, params.Encode())
+
+	// Create a new GET request with the access token in the Authorization header
+	req, err := http.NewRequest("GET", searchURL, nil)
+	if err != nil {
+		log.Fatalf("Failed to create request: %v", err)
+	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	client := &http.Client{}
@@ -40,26 +58,60 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 		return models.Song{}, err
 	}
 	defer resp.Body.Close()
+	// Parse the response to get song information
 
-	var spotifyData map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&spotifyData)
-
-	items := spotifyData["tracks"].(map[string]interface{})["items"].([]interface{})
-	if len(items) > 0 {
-		track := items[0].(map[string]interface{})
-		trackDetails := models.Song{
-			Track:      songName,
-			Artist:     artistName,
-			Album:      track["album"].(map[string]interface{})["name"].(string),
-			ImageURL:   track["album"].(map[string]interface{})["images"].([]interface{})[0].(map[string]interface{})["url"].(string),
-			TrackURI:   track["uri"].(string),
-			SpotifyURL: track["external_urls"].(map[string]interface{})["spotify"].(string),
-		}
-
-		return trackDetails, nil
+	var response struct {
+		Tracks struct {
+			Items []struct {
+				Id string `json:"id"`
+				Name   string `json:"name"`
+				Artist []struct {
+					Name string `json:"name"`
+				} `json:"artists"`
+				URI   string `json:"url"`
+				Album struct {
+					Name string `json:"name"`
+					Images []struct {
+						URL string `json:"url"`
+					} `json:"images"`
+				} `json:"album"`
+				ExternalURLs struct {
+					Spotify string `json:"spotify"`
+				} `json:"external_urls"`
+			} `json:"items"`
+		} `json:"tracks"`
 	}
 
-	return models.Song{}, errors.New("song not found on Spotify")
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return models.Song{}, err
+	}
+
+	// Check if any song was found
+	if len(response.Tracks.Items) == 0 {
+		log.Fatalf("No Song Found")
+		return models.Song{}, nil 
+	}
+
+	// Display song information
+	song := response.Tracks.Items[0]
+	fmt.Println("Song Id:", song.Id)
+	fmt.Println("Song Name:", song.Name)
+	fmt.Println("Artist Name:", song.Artist[0].Name)
+	fmt.Println("Album Name:", song.Album.Name)
+	fmt.Println("Album Image:", song.Album.Images[0].URL)
+	fmt.Println("Spotify URL:", song.ExternalURLs.Spotify)
+
+	trackDetails := models.Song{
+		Id: 		song.Id,
+		Track:      song.Name,
+		Artist:     song.Artist[0].Name,
+		Album:      song.Album.Name,
+		ImageURL:   song.Album.Images[0].URL,
+		TrackURI:   song.URI,
+		SpotifyURL: song.ExternalURLs.Spotify,
+	}
+
+	return trackDetails, nil
 }
 
 // GetPredictionFromFlask calls Flask service to get song predictions.

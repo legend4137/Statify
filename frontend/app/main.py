@@ -15,7 +15,7 @@ def search_song(song_name, artist_name):
         "song_name": song_name,
         "artist_name": artist_name
     }
-    response = requests.post(SEARCH_URL, json=search_payload)
+    response = requests.get(SEARCH_URL, json=search_payload)
     if response.status_code == 200:
         return response.json()
     else:
@@ -46,30 +46,15 @@ def main():
     
     user_id = get_user_id()
     
-    if user_id:
-        st.subheader('Recommended Songs')
-        recommended_songs = get_recommendations(user_id)
-        
-        if recommended_songs:
-            for song in recommended_songs:
-                track_name = song['track']
-                artist_name = song['artist']
-                album = song['album']
-                image_url = song['image_url']
-                track_uri = song['track_uri']
-                spotify_url = song['spotify_url']
-                
-                st.image(image_url, caption=f"{track_name} by {artist_name}", width=200)
-                st.write(f"Album: {album}")
-                st.write(f"[Listen on Spotify]({spotify_url})")
-                
-                if st.button(f"Rate {track_name}"):
-                    rate_song(user_id, track_uri)
+    # Divide the layout into two columns
+    search_col, recommend_col = st.columns(2)
 
+    # Left column for search functionality
+    with search_col:
         st.subheader('Search for a Song')
         search_song_name = st.text_input('Song Name', '')
         search_artist_name = st.text_input('Artist Name', '')
-        
+
         if st.button('Search Song'):
             if search_song_name and search_artist_name:
                 song_details = search_song(search_song_name, search_artist_name)
@@ -77,9 +62,34 @@ def main():
                     st.subheader('Song Details')
                     st.image(song_details['image_url'], caption=f"{song_details['track']} by {song_details['artist']}", width=200)
                     st.write(f"Album: {song_details['album']}")
-                    st.write(f"[Listen on Spotify]({song_details['spotify_url']})")
+                    # Embed Spotify player for the track
+                    embed_url = f"https://open.spotify.com/embed/track/{song_details['id']}"
+                    st.components.v1.iframe(embed_url, width=300, height=380)  # Adjust height/width as needed
             else:
                 st.error("Please enter both song name and artist name")
+
+    # Right column for recommendations
+    with recommend_col:
+        st.subheader('Recommended Songs')
+        
+        if user_id:
+            recommended_songs = get_recommendations(user_id)
+            
+            if recommended_songs:
+                for song in recommended_songs:
+                    track_name = song['track']
+                    artist_name = song['artist']
+                    album = song['album']
+                    image_url = song['image_url']
+                    track_uri = song['track_uri']
+                    spotify_url = song['spotify_url']
+                    
+                    st.image(image_url, caption=f"{track_name} by {artist_name}", width=200)
+                    st.write(f"Album: {album}")
+                    st.write(f"[Listen on Spotify]({spotify_url})")
+                    
+                    if st.button(f"Rate {track_name}"):
+                        rate_song(user_id, track_uri)
 
 if __name__ == '__main__':
     main()
