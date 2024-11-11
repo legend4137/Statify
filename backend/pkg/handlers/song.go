@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"your_project/pkg/services"
+	"backend/pkg/services"
 )
 
 const flaskURL = "http://localhost:5000/predict"
@@ -19,7 +19,7 @@ func SearchSongHandler(w http.ResponseWriter, r *http.Request) {
 	songName := requestData["song_name"]
 	artistName := requestData["artist_name"]
 
-	song, err := services.GetSong(songName, artistName)
+	_, err := services.GetSong(songName, artistName)
 	if err != nil {
 		http.Error(w, `{"error": "Song not found in database"}`, http.StatusNotFound)
 		return

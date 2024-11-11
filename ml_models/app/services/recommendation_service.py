@@ -12,7 +12,8 @@ songs_data = pd.DataFrame(list(db["songs"].find()))
 activity_data = pd.DataFrame(list(db["user_activity"].find()))
 
 # Load TensorFlow Lite model
-interpreter = tf.lite.Interpreter(model_path="ml_models/app/models/ncf_model.tflite")
+model_path = "./models/ncf_model.tflite"
+interpreter = tf.lite.Interpreter(model_path=model_path)
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()

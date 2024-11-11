@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"context"
 	"fmt"
 	"net/http"
-	"your_project/pkg/models"
+	"backend/pkg/models"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const spotifyClientID = "e113dc056db54c8d8f39dd670061eb0c"
@@ -80,14 +82,39 @@ func GetPredictionFromFlask(payload []byte) ([]models.Song, error) {
 	return tracks, nil
 }
 
+// RateSong saves the rating for a song in the database.
+func RateSong(userID, trackID string, rating int) error {
+	// Check if the rating is valid (you can modify this validation based on your needs).
+	if rating < 1 || rating > 5 {
+		return errors.New("invalid rating value, must be between 1 and 5")
+	}
+
+	// Insert the rating into the MongoDB collection.
+	_, err := ratingsCollection.InsertOne(context.Background(), bson.M{
+		"user_id": userID,
+		"track_id": trackID,
+		"rating":   rating,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // GetSpotifyTracksDetails fetches Spotify details for multiple tracks.
 func GetSpotifyTracksDetails(tracks []models.Song) ([]models.Song, error) {
 	var trackDetails []models.Song
 	for _, track := range tracks {
 		spotifyURL := fmt.Sprintf("https://api.spotify.com/v1/search?q=track:%s artist:%s&type=track", track.Track, track.Artist)
 		req, _ := http.NewRequest("GET", spotifyURL, nil)
-		req.Header.Set("Authorization", "Bearer "+accessToken)
+		accessToken, err := getSpotifyAccessToken()
+		if err != nil {
+			continue
+		}
+		req.Header.Set("Authorization", "Bearer "+ accessToken)
 
+		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
 			continue
