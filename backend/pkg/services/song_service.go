@@ -3,15 +3,12 @@ package services
 import (
 	"backend/pkg/models"
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -132,26 +129,6 @@ func GetPredictionFromFlask(payload []byte) ([]models.Song, error) {
 	}
 
 	return tracks, nil
-}
-
-// RateSong saves the rating for a song in the database.
-func RateSong(userID, trackID string, rating int) error {
-	// Check if the rating is valid (you can modify this validation based on your needs).
-	if rating < 1 || rating > 5 {
-		return errors.New("invalid rating value, must be between 1 and 5")
-	}
-
-	// Insert the rating into the MongoDB collection.
-	_, err := ratingsCollection.InsertOne(context.Background(), bson.M{
-		"user_id": userID,
-		"track_id": trackID,
-		"rating":   rating,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // GetSpotifyTracksDetails fetches Spotify details for multiple tracks.

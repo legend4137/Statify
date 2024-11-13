@@ -1,4 +1,4 @@
-mongo_uri: "mongodb+srv://b22ai015:uwhNGGuRUOGYSpij@musicrmdvic.5p5wphg.mongodb.net/music-recommender?retryWrites=true&w=majority"
+mongo_uri: "mongodb+srv://b22ai015:mel7iKthsBpNR6d3@msrmd.tgazz.mongodb.net/?retryWrites=true&w=majority&appName=MsRmd"
 spotify_client_id: "e113dc056db54c8d8f39dd670061eb0c"
 spotify_client_secret: "7b873f8a97244f9eb937c5fa3b3c0e93"
 flask_url: "http://localhost:5000/predict"
