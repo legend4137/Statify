@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"backend/pkg/services"
 	"encoding/json"
 	"net/http"
-	"backend/pkg/services"
 )
 
 // const flaskURL = "http://localhost:5000/predict"

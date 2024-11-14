@@ -1,8 +1,8 @@
 package main
 
 import (
-	"backend/pkg/handlers"
 	"backend/config"
+	"backend/pkg/handlers"
 	"backend/routes"
 	"log"
 	"net/http"
