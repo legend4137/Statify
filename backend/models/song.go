@@ -2,7 +2,7 @@ package models
 
 // Song represents the song details structure.
 type Song struct {
-	Id 		   string `json:"id"`
+	Id         string `json:"id"`
 	Track      string `json:"track"`
 	Artist     string `json:"artist"`
 	Album      string `json:"album"`

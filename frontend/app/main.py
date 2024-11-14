@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import json
 
-# API endpoints
 BASE_URL = 'http://localhost:4567'
 LOGIN_URL = f'{BASE_URL}/login'
 REGISTER_URL = f'{BASE_URL}/register'
@@ -58,16 +57,26 @@ def search_song(song_name, artist_name):
         st.error(f"Error: {response.json().get('error')}")
         return None
 
+def get_recommendations(user_id):
+    try:
+        response = requests.post(GO_PREDICT_URL, json={"user_id": str(user_id)})
+        if response.status_code == 200:
+            return response.json().get('songs', [])
+        else:
+            st.error("Failed to fetch recommendations")
+            return []
+    except Exception as e:
+        st.error(f"Error: {str(e)}")
+        return []
+    
 def main():
     st.title('Music Recommendation System')
 
-    # Session state initialization
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
     if 'user_data' not in st.session_state:
         st.session_state.user_data = None
 
-    # Show login/register page if not logged in
     if not st.session_state.logged_in:
         tab1, tab2 = st.tabs(["Login", "Register"])
         
@@ -102,9 +111,7 @@ def main():
                 else:
                     st.error("Please fill in all fields")
 
-    # Show main application if logged in
     else:
-        # Display user information
         st.write(f"Welcome, {st.session_state.user_data['user_name']}!")
         st.write(f"User ID: {st.session_state.user_data['user_id']}")
         
@@ -113,10 +120,8 @@ def main():
             st.session_state.user_data = None
             st.rerun()
 
-        # Divide the layout into two columns
         search_col, recommend_col = st.columns(2)
 
-        # Left column for search functionality
         with search_col:
             st.subheader('Search for a Song')
             search_song_name = st.text_input('Song Name', '')
@@ -126,9 +131,9 @@ def main():
                 if search_song_name and search_artist_name:
                     song_details = search_song(search_song_name, search_artist_name)
                     if song_details:
-                        st.subheader('Song Details')
-                        st.image(song_details['image_url'], caption=f"{song_details['track']} by {song_details['artist']}", width=200)
-                        st.write(f"Album: {song_details['album']}")
+                        # st.subheader('Song Details')
+                        # st.image(song_details['image_url'], caption=f"{song_details['track']} by {song_details['artist']}", width=200)
+                        # st.write(f"Album: {song_details['album']}")
                         embed_url = f"https://open.spotify.com/embed/track/{song_details['id']}"
                         st.components.v1.iframe(embed_url, width=300, height=380)
                     else:
@@ -144,12 +149,13 @@ def main():
                 
                 if recommended_songs:
                     for song in recommended_songs:
-                        st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
-                        st.write(f"Album: {song['album']}")
-                        st.write(f"[Listen on Spotify]({song['spotify_url']})")
-                        
-                        if st.button(f"Rate {song['track']}"):
-                            rate_song(st.session_state.user_data['_id'], song['track_uri'])
+                        # st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
+                        # st.write(f"Album: {song['album']}")
+                        # st.write(f"[Listen on Spotify]({song['spotify_url']})")
+                        embed_url = f"https://open.spotify.com/embed/track/{song['id']}"
+                        st.components.v1.iframe(embed_url, width=300, height=380)
+                        # if st.button(f"Rate {song['track']}"):
+                            # rate_song(st.session_state.user_data['_id'], song['track_uri'])
 
 if __name__ == '__main__':
     main()

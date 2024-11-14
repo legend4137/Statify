@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	spotifyClientID = "e113dc056db54c8d8f39dd670061eb0c"
+	spotifyClientID     = "e113dc056db54c8d8f39dd670061eb0c"
 	spotifyClientSecret = "7b873f8a97244f9eb937c5fa3b3c0e93"
-	spotifyAPIBase = "https://api.spotify.com/v1/search"
-	flaskURL = "http://localhost:5000/predict"
+	spotifyAPIBase      = "https://api.spotify.com/v1/search"
+	flaskURL            = "http://localhost:5000/predict"
 )
 
 // GetSong retrieves a song from the database.
@@ -33,7 +33,6 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	if err != nil {
 		return models.Song{}, err
 	}
-
 
 	baseURL := "https://api.spotify.com/v1/search"
 	params := url.Values{}
@@ -60,14 +59,14 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	var response struct {
 		Tracks struct {
 			Items []struct {
-				Id string `json:"id"`
+				Id     string `json:"id"`
 				Name   string `json:"name"`
 				Artist []struct {
 					Name string `json:"name"`
 				} `json:"artists"`
 				URI   string `json:"url"`
 				Album struct {
-					Name string `json:"name"`
+					Name   string `json:"name"`
 					Images []struct {
 						URL string `json:"url"`
 					} `json:"images"`
@@ -86,7 +85,7 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	// Check if any song was found
 	if len(response.Tracks.Items) == 0 {
 		log.Panicf("No Song Found")
-		return models.Song{}, nil 
+		return models.Song{}, nil
 	}
 
 	// Display song information
@@ -99,7 +98,7 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	fmt.Println("Spotify URL:", song.ExternalURLs.Spotify)
 
 	trackDetails := models.Song{
-		Id: 		song.Id,
+		Id:         song.Id,
 		Track:      song.Name,
 		Artist:     song.Artist[0].Name,
 		Album:      song.Album.Name,
@@ -141,7 +140,7 @@ func GetSpotifyTracksDetails(tracks []models.Song) ([]models.Song, error) {
 		if err != nil {
 			continue
 		}
-		req.Header.Set("Authorization", "Bearer "+ accessToken)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
 
 		client := &http.Client{}
 		resp, err := client.Do(req)
