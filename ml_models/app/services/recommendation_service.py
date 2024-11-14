@@ -101,8 +101,10 @@ def filter_with_mood(user_id, user_top_20, db):
 def retrieve_user_info(user_id):
     user_data = pd.DataFrame(list(db["users"].find({"user_id": user_id})))
     activity_data = pd.DataFrame(list(db["user_activity"].find({"user_id": user_id})))
+
+
     if user_data.empty or activity_data.empty:
-        raise ValueError(f"No data found for user_id: {user_id}")
+        raise ValueError(f"{user_id}{user_data}{activity_data}No data found for user_id: {user_id}")
     
     age = user_data.iloc[0]["user_age"]
     gender = user_data.iloc[0]["user_gender"]
@@ -117,7 +119,7 @@ def get_recommendations(user_id):
     n_factors = 20
     n_genres=18
     n_languages = 1
-
+    print(user_id)
     model, genre_encoder, language_encoder = load_model_and_encoders(
         n_users, num_items, n_factors, n_genres, n_languages
     )
