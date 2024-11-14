@@ -1,7 +1,7 @@
-package handlers
+package controllers
 
 import (
-	"backend/pkg/services"
+	"backend/services"
 	"encoding/json"
 	"net/http"
 )
