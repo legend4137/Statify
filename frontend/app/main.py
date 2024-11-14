@@ -92,7 +92,7 @@ def main():
             reg_password = st.text_input("Password", type="password", key="reg_password")
             user_name = st.text_input("Full Name")
             user_age = st.number_input("Age", min_value=1, max_value=120)
-            user_gender = st.selectbox("Gender", ["Male", "Female", "Other"])
+            user_gender = st.selectbox("Gender", ["Male", "Female"])
             user_song_language = st.selectbox("Preferred Song Language", ["English", "Hindi", "Spanish", "Other"])
 
             if st.button("Register"):
@@ -131,6 +131,8 @@ def main():
                         st.write(f"Album: {song_details['album']}")
                         embed_url = f"https://open.spotify.com/embed/track/{song_details['id']}"
                         st.components.v1.iframe(embed_url, width=300, height=380)
+                    else:
+                        st.error("Song not found")
                 else:
                     st.error("Please enter both song name and artist name")
 

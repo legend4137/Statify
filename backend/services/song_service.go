@@ -1,7 +1,7 @@
 package services
 
 import (
-	"backend/pkg/models"
+	"backend/models"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -45,7 +45,7 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 	// Create a new GET request with the access token in the Authorization header
 	req, err := http.NewRequest("GET", searchURL, nil)
 	if err != nil {
-		log.Fatalf("Failed to create request: %v", err)
+		log.Panicf("Failed to create request: %v", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
@@ -85,7 +85,7 @@ func GetSpotifyTrackDetails(songName, artistName string) (models.Song, error) {
 
 	// Check if any song was found
 	if len(response.Tracks.Items) == 0 {
-		log.Fatalf("No Song Found")
+		log.Panicf("No Song Found")
 		return models.Song{}, nil 
 	}
 

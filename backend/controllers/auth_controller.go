@@ -5,7 +5,7 @@ import (
     "encoding/json"
     "net/http"
     "golang.org/x/crypto/bcrypt"
-    "backend/pkg/models"
+    "backend/models"
 	"backend/config"
     "go.mongodb.org/mongo-driver/bson"
     "go.mongodb.org/mongo-driver/mongo/options"
