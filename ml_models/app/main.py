@@ -3,10 +3,12 @@ from services.recommendation_service import get_recommendations
 
 app = Flask(__name__)
 
-@app.route('/predict', methods=['GET'])
+@app.route('/predict', methods=['POST'])
 def get_recommendations_endpoint():
-    user_id = request.args.get('user_id')
+    data = request.get_json()
+    user_id = data.get('user_id')
     recommendations = get_recommendations(user_id)
+    print(recommendations)
     return jsonify({'songs': recommendations})
 
 if __name__ == '__main__':

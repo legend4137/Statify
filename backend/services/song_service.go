@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -118,15 +119,22 @@ func GetPredictionFromFlask(payload []byte) ([]models.Song, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Println("Error during Flask POST request:", err)
 		return nil, errors.New("failed to fetch prediction from Flask")
 	}
 	defer resp.Body.Close()
 
+	// Debug response body
+	body, _ := io.ReadAll(resp.Body)
+	log.Println("Raw response from Flask:", string(body))
+
 	var tracks []models.Song
-	if err := json.NewDecoder(resp.Body).Decode(&tracks); err != nil {
+	if err := json.Unmarshal(body, &tracks); err != nil {
+		log.Println("Error decoding Flask response:", err)
 		return nil, err
 	}
 
+	log.Println("Decoded tracks from Flask:", tracks)
 	return tracks, nil
 }
 
