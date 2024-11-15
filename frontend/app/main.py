@@ -18,7 +18,6 @@ def login(email, password):
         if response.status_code == 200:
             return response.json()
         else:
-            print(response)
             st.error("Invalid credentials")
             return None
     except Exception as e:
@@ -61,7 +60,7 @@ def get_recommendations(user_id):
     try:
         response = requests.post(GO_PREDICT_URL, json={"user_id": str(user_id)})
         if response.status_code == 200:
-            return response.json().get('songs', [])
+            return response.json()
         else:
             st.error("Failed to fetch recommendations")
             return []

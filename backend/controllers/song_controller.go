@@ -20,12 +20,6 @@ func SearchSongHandler(w http.ResponseWriter, r *http.Request) {
 	songName := requestData["song_name"]
 	artistName := requestData["artist_name"]
 
-	_, err := services.GetSong(songName, artistName)
-	if err != nil {
-		http.Error(w, `{"error": "Song not found in database"}`, http.StatusNotFound)
-		return
-	}
-
 	trackDetails, err := services.GetSpotifyTrackDetails(songName, artistName)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch Spotify track"}`, http.StatusInternalServerError)
@@ -52,23 +46,13 @@ func PredictHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Payload sent to Flask:", string(payload)) // Log payload data
 
 	// Fetch predictions from Flask
-	tracks, err := services.GetPredictionFromFlask(payload)
+	spotify_songs, err := services.GetPredictionFromFlask(payload)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch prediction from Flask"}`, http.StatusInternalServerError)
 		log.Println("Error fetching prediction from Flask:", err)
 		return
 	}
 
-	// Fetch Spotify track details
-	trackDetails, err := services.GetSpotifyTracksDetails(tracks)
-	if err != nil {
-		http.Error(w, `{"error": "Failed to fetch Spotify track details"}`, http.StatusInternalServerError)
-		log.Println("Error fetching Spotify track details:", err)
-		return
-	}
-
-	log.Println("Track details:", trackDetails) // Log final track details
-
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(trackDetails)
+	json.NewEncoder(w).Encode(spotify_songs)
 }

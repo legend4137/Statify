@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 import pickle
-
+import os
 
 client = MongoClient("mongodb+srv://b22ai015:mel7iKthsBpNR6d3@msrmd.tgazz.mongodb.net/?retryWrites=true&w=majority&appName=MsRmd")
 db = client["data_ms"]
@@ -43,12 +43,17 @@ class NCFWithDemographics(nn.Module):
 
 
 def load_model_and_encoders(n_users, n_items, n_factors, n_genres, n_languages):
+    # Get the directory of this script
+    base_dir = os.path.dirname(__file__)
+    models_dir = os.path.join(base_dir, '../models')
+
     model = NCFWithDemographics(n_users, n_items, n_factors, n_genres, n_languages)
-    model.load_state_dict(torch.load('C:/Users/chbha/Documents/GitHub/Statify/ml_models/app/models/ncf_model.pth'))
+    model_path = os.path.join(models_dir, 'ncf_model.pth')
+    model.load_state_dict(torch.load(model_path))
     model.eval()
-    with open('C:/Users/chbha/Documents/GitHub/Statify/ml_models/app/models/genre_encoder.pkl', 'rb') as f:
+    with open(os.path.join(models_dir, 'genre_encoder.pkl'), 'rb') as f:
         genre_encoder = pickle.load(f)
-    with open('C:/Users/chbha/Documents/GitHub/Statify/ml_models/app/models/language_encoder.pkl', 'rb') as f:
+    with open(os.path.join(models_dir, 'language_encoder.pkl'), 'rb') as f:
         language_encoder = pickle.load(f)
     return model, genre_encoder, language_encoder
 

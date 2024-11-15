@@ -5,10 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"os"
 )
 
 // getSpotifyAccessToken retrieves the Spotify API access token
 func getSpotifyAccessToken() (string, error) {
+
+	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret:= os.Getenv("SPOTIFY_CLIENT_SECRET")
+
 	url := "https://accounts.spotify.com/api/token"
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer([]byte("grant_type=client_credentials")))
 	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(spotifyClientID+":"+spotifyClientSecret)))
