@@ -9,6 +9,10 @@ type Spotify_Song struct {
 	ImageURL   string `json:"image_url"`
 	TrackURI   string `json:"track_uri"`
 	SpotifyURL string `json:"spotify_url"`
+	Valence    float64 `json:"valence"`
+	Energy     float64 `json:"energy"`
+	Genre      string  `json:"genre"`
+	Language   string  `json:"language"`
 }
 
 type Song struct {

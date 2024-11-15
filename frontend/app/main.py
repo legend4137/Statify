@@ -45,10 +45,11 @@ def register(email, password, user_name, user_age, user_gender, user_song_langua
         st.error(f"Error: {str(e)}")
         return False
 
-def search_song(song_name, artist_name):
+def search_song(user_id, song_name, artist_name):
     search_payload = {
+        "user_id": str(user_id),
         "song_name": song_name,
-        "artist_name": artist_name
+        "artist_name": artist_name,
     }
     response = requests.get(SEARCH_URL, json=search_payload)
     if response.status_code == 200:
@@ -103,7 +104,7 @@ def main():
             user_age = st.number_input("Age", min_value=1, max_value=120)
             user_gender = st.selectbox("Gender", ["Male", "Female"])
             user_song_language = st.selectbox("Preferred Song Language", ["English", "Hindi", "Spanish", "Other"])
-            user_preferred_genre = st.selectbox("Preferred Song Genre", ["English", "Hindi", "Spanish", "Other"])
+            user_preferred_genre = st.selectbox("Preferred Song Genre", ["X", "Y", "Z", "Other"])
 
             if st.button("Register"):
                 if all([reg_email, reg_password, user_name, user_age, user_gender, user_song_language, user_preferred_genre]):
@@ -130,7 +131,7 @@ def main():
 
             if st.button('Search Song'):
                 if search_song_name and search_artist_name:
-                    song_details = search_song(search_song_name, search_artist_name)
+                    song_details = search_song(st.session_state.user_data['user_id'], search_song_name, search_artist_name)
                     if song_details:
                         # st.subheader('Song Details')
                         # st.image(song_details['image_url'], caption=f"{song_details['track']} by {song_details['artist']}", width=200)

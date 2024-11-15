@@ -19,12 +19,21 @@ func SearchSongHandler(w http.ResponseWriter, r *http.Request) {
 
 	songName := requestData["song_name"]
 	artistName := requestData["artist_name"]
+	userID := requestData["user_id"]
 
 	trackDetails, err := services.GetSpotifyTrackDetails(songName, artistName)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to fetch Spotify track"}`, http.StatusInternalServerError)
 		return
 	}
+
+	trackID, err := services.AddSongToCollection(trackDetails)
+	if err != nil {
+		return
+	}
+
+	services.AddOrCheckRating(userID, trackID)
+	services.AddTrackToUserActivity(userID, trackID)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(trackDetails)
