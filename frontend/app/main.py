@@ -143,47 +143,20 @@ def main():
                     st.error("Please enter both song name and artist name")
 
         # Right column for recommendations
-        # with recommend_col:
-        #     st.subheader('Recommended Songs')
-        #     if st.button("Get Recommendations"):
-        #         recommended_songs = get_recommendations(st.session_state.user_data['user_id'])
-                
-        #         if recommended_songs:
-        #             for song in recommended_songs:
-        #                 # st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
-        #                 # st.write(f"Album: {song['album']}")
-        #                 # st.write(f"[Listen on Spotify]({song['spotify_url']})")
-        #                 embed_url = f"https://open.spotify.com/embed/track/{song['id']}"
-        #                 st.components.v1.iframe(embed_url, width=300, height=380)
-        #                 # if st.button(f"Rate {song['track']}"):
-        #                     # rate_song(st.session_state.user_data['_id'], song['track_uri'])
         with recommend_col:
             st.subheader('Recommended Songs')
-            
             if st.button("Get Recommendations"):
                 recommended_songs = get_recommendations(st.session_state.user_data['user_id'])
                 
                 if recommended_songs:
-                    # Create two columns for zigzag design
-                    col1, col2 = st.columns(2)
-                    
-                    # Loop through recommended songs and display them in a zigzag pattern
-                    for index, song in enumerate(recommended_songs):
+                    for song in recommended_songs:
+                        # st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
+                        # st.write(f"Album: {song['album']}")
+                        # st.write(f"[Listen on Spotify]({song['spotify_url']})")
                         embed_url = f"https://open.spotify.com/embed/track/{song['id']}"
-                        
-                        # Alternate between columns using the index (even -> col1, odd -> col2)
-                        if index % 2 == 0:
-                            with col1:
-                                st.components.v1.iframe(embed_url, width=300, height=380)
-                                st.write(f"{song['track']} by {song['artist']}")
-                                st.write(f"Album: {song['album']}")
-                                st.write(f"[Listen on Spotify]({song['spotify_url']})")
-                        else:
-                            with col2:
-                                st.components.v1.iframe(embed_url, width=300, height=380)
-                                st.write(f"{song['track']} by {song['artist']}")
-                                st.write(f"Album: {song['album']}")
-                                st.write(f"[Listen on Spotify]({song['spotify_url']})")
+                        st.components.v1.iframe(embed_url, width=300, height=380)
+                        # if st.button(f"Rate {song['track']}"):
+                            # rate_song(st.session_state.user_data['_id'], song['track_uri'])
 
 if __name__ == '__main__':
     main()
