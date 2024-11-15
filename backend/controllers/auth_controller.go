@@ -79,7 +79,25 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		UserGender:       req.UserGender,
 	}
 
+	newUserActivity := models.UserActivity{
+		ID:           primitive.NewObjectID(),
+		UserID:       userID,
+		Tracks:       []string{},
+		Mood_Energy:  0,
+		Mood_Valence: 0,
+		// Preferred_Genre:    req.Preferred_Genre,
+		Preferred_Language: req.UserName,
+		Age:                req.UserAge,
+		Language:           req.UserSongLanguage,
+	}
+
 	_, err = userCollection.InsertOne(context.TODO(), newUser)
+	if err != nil {
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = userCollection.InsertOne(context.TODO(), newUserActivity)
 	if err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return

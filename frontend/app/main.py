@@ -24,7 +24,7 @@ def login(email, password):
         st.error(f"Error: {str(e)}")
         return None
 
-def register(email, password, user_name, user_age, user_gender, user_song_language):
+def register(email, password, user_name, user_age, user_gender, user_song_language, user_preferred_genre):
     try:
         response = requests.post(REGISTER_URL, json={
             "email": email,
@@ -32,7 +32,8 @@ def register(email, password, user_name, user_age, user_gender, user_song_langua
             "user_name": user_name,
             "user_age": user_age,
             "user_gender": user_gender,
-            "user_song_language": user_song_language
+            "user_song_language": user_song_language,
+            "user_preferred_genre": user_preferred_genre
         })
         if response.status_code == 200:
             st.success("Registration successful! Please login.")
@@ -102,10 +103,11 @@ def main():
             user_age = st.number_input("Age", min_value=1, max_value=120)
             user_gender = st.selectbox("Gender", ["Male", "Female"])
             user_song_language = st.selectbox("Preferred Song Language", ["English", "Hindi", "Spanish", "Other"])
+            user_preferred_genre = st.selectbox("Preferred Song Genre", ["English", "Hindi", "Spanish", "Other"])
 
             if st.button("Register"):
-                if all([reg_email, reg_password, user_name, user_age, user_gender, user_song_language]):
-                    if register(reg_email, reg_password, user_name, user_age, user_gender, user_song_language):
+                if all([reg_email, reg_password, user_name, user_age, user_gender, user_song_language, user_preferred_genre]):
+                    if register(reg_email, reg_password, user_name, user_age, user_gender, user_song_language, user_preferred_genre):
                         st.success("Please go to login tab to sign in")
                 else:
                     st.error("Please fill in all fields")
@@ -141,20 +143,47 @@ def main():
                     st.error("Please enter both song name and artist name")
 
         # Right column for recommendations
+        # with recommend_col:
+        #     st.subheader('Recommended Songs')
+        #     if st.button("Get Recommendations"):
+        #         recommended_songs = get_recommendations(st.session_state.user_data['user_id'])
+                
+        #         if recommended_songs:
+        #             for song in recommended_songs:
+        #                 # st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
+        #                 # st.write(f"Album: {song['album']}")
+        #                 # st.write(f"[Listen on Spotify]({song['spotify_url']})")
+        #                 embed_url = f"https://open.spotify.com/embed/track/{song['id']}"
+        #                 st.components.v1.iframe(embed_url, width=300, height=380)
+        #                 # if st.button(f"Rate {song['track']}"):
+        #                     # rate_song(st.session_state.user_data['_id'], song['track_uri'])
         with recommend_col:
             st.subheader('Recommended Songs')
+            
             if st.button("Get Recommendations"):
                 recommended_songs = get_recommendations(st.session_state.user_data['user_id'])
                 
                 if recommended_songs:
-                    for song in recommended_songs:
-                        # st.image(song['image_url'], caption=f"{song['track']} by {song['artist']}", width=200)
-                        # st.write(f"Album: {song['album']}")
-                        # st.write(f"[Listen on Spotify]({song['spotify_url']})")
+                    # Create two columns for zigzag design
+                    col1, col2 = st.columns(2)
+                    
+                    # Loop through recommended songs and display them in a zigzag pattern
+                    for index, song in enumerate(recommended_songs):
                         embed_url = f"https://open.spotify.com/embed/track/{song['id']}"
-                        st.components.v1.iframe(embed_url, width=300, height=380)
-                        # if st.button(f"Rate {song['track']}"):
-                            # rate_song(st.session_state.user_data['_id'], song['track_uri'])
+                        
+                        # Alternate between columns using the index (even -> col1, odd -> col2)
+                        if index % 2 == 0:
+                            with col1:
+                                st.components.v1.iframe(embed_url, width=300, height=380)
+                                st.write(f"{song['track']} by {song['artist']}")
+                                st.write(f"Album: {song['album']}")
+                                st.write(f"[Listen on Spotify]({song['spotify_url']})")
+                        else:
+                            with col2:
+                                st.components.v1.iframe(embed_url, width=300, height=380)
+                                st.write(f"{song['track']} by {song['artist']}")
+                                st.write(f"Album: {song['album']}")
+                                st.write(f"[Listen on Spotify]({song['spotify_url']})")
 
 if __name__ == '__main__':
     main()

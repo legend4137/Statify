@@ -96,7 +96,7 @@ def filter_with_mood(user_id, user_top_20, db):
     mood_valence = user_mood["mood_valence"]
     user_mood_point = pca.transform([[mood_energy, mood_valence]])
 
-    nn = NearestNeighbors(n_neighbors=10)
+    nn = NearestNeighbors(n_neighbors=5)
     nn.fit(reduced_features)
     distances, indices = nn.kneighbors(user_mood_point)
 
