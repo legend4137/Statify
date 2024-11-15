@@ -145,7 +145,7 @@ def main():
         with recommend_col:
             st.subheader('Recommended Songs')
             if st.button("Get Recommendations"):
-                recommended_songs = get_recommendations(st.session_state.user_data['_id'])
+                recommended_songs = get_recommendations(st.session_state.user_data['user_id'])
                 
                 if recommended_songs:
                     for song in recommended_songs:

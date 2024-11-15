@@ -54,7 +54,7 @@ def load_model_and_encoders(n_users, n_items, n_factors, n_genres, n_languages):
 
 def recommend_top_n(user_id, model, genre_id, language_id, age, gender, num_items, n=20):
     item_vec = torch.arange(num_items)
-    user_vec = torch.full((num_items,), user_id)
+    user_vec = torch.full((num_items,), int(user_id))
     genre_vec = torch.full((num_items,), genre_id)
     language_vec = torch.full((num_items,), language_id)
     age_vec = torch.full((num_items,), age)
@@ -102,7 +102,6 @@ def retrieve_user_info(user_id):
     user_data = pd.DataFrame(list(db["users"].find({"user_id": user_id})))
     activity_data = pd.DataFrame(list(db["user_activity"].find({"user_id": user_id})))
 
-
     if user_data.empty or activity_data.empty:
         raise ValueError(f"{user_id}{user_data}{activity_data}No data found for user_id: {user_id}")
     
@@ -114,18 +113,19 @@ def retrieve_user_info(user_id):
     return age, gender, preferred_language, preferred_genre
 
 def get_recommendations(user_id):
+    user_id = int(user_id)
     n_users = 999
     num_items = 395386
     n_factors = 20
     n_genres=18
     n_languages = 1
-    print(user_id)
     model, genre_encoder, language_encoder = load_model_and_encoders(
         n_users, num_items, n_factors, n_genres, n_languages
     )
 
     age, gender, preferred_language, preferred_genre = retrieve_user_info(user_id)
 
+    gender = 1 if gender.lower() == "male" else 0
     genre_id = genre_encoder.transform([preferred_genre])[0]
     language_id = language_encoder.transform([preferred_language])[0]
 
