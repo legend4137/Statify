@@ -5,9 +5,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import os
+from dotenv import load_dotenv, dotenv_values
 
-client = MongoClient('mongodb+srv://b22ai015:mel7iKthsBpNR6d3@msrmd.tgazz.mongodb.net/?retryWrites=true&w=majority&appName=MsRmd')
-db = client['music_recommendation_system']
+load_dotenv()
+DATABASE = os.getenv('MONGO_DATABASE')
+MONGODB_URI = os.getenv('MONGO_URI')
+
+client = MongoClient(MONGODB_URI)
+db = client[DATABASE]
+
 
 def retrieve_all_new_data():
     ratings_data = pd.DataFrame(list(db["buffer_ratings"].find()))
@@ -46,8 +53,25 @@ class RatingDataset(torch.utils.data.Dataset):
             self.ages[idx],
             self.genders[idx]
         )
-    
-def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data):
+
+def update_model_embeddings(model, n_users, n_items, n_genres, n_languages):
+    if n_users > model.user_embedding.num_embeddings:
+        model.user_embedding = nn.Embedding(n_users, model.user_embedding.embedding_dim)
+        
+    if n_items > model.item_embedding.num_embeddings:
+        model.item_embedding = nn.Embedding(n_items, model.item_embedding.embedding_dim)
+        
+    if n_genres > model.genre_embedding.num_embeddings:
+        model.genre_embedding = nn.Embedding(n_genres, model.genre_embedding.embedding_dim)
+        
+    if n_languages > model.language_embedding.num_embeddings:
+        model.language_embedding = nn.Embedding(n_languages, model.language_embedding.embedding_dim)
+        
+    return model
+
+def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data, n_users, n_items, n_genres, n_languages):
+    model = update_model_embeddings(model, n_users, n_items, n_genres, n_languages)
+
     for param in model.parameters():
         param.requires_grad = False
     for param in model.output.parameters():
@@ -55,7 +79,7 @@ def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_d
 
     if new_user_ids:
         for new_user_id in new_user_ids:
-            model.user_embeddings[new_user_id] = torch.randn(1, model.user_embedding_dim)
+            model.user_embedding.weight.data[new_user_id] = torch.randn(model.user_embedding.embedding_dim)
 
     new_train_dataset = RatingDataset(
         new_user_ids, new_track_ids, new_ratings,
@@ -80,15 +104,32 @@ def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_d
     if new_songs_data:
         for song_data in new_songs_data:
             song_id = song_data['track_id']
-            model.song_embeddings[song_id] = torch.randn(1, model.song_embedding_dim)
+            model.item_embedding.weight.data[song_id] = torch.randn(model.item_embedding.embedding_dim)
 
     return model
 
-def save_model(model, file_path):
-    torch.save(model.state_dict(), file_path)
+def update_env_file(key, value):
+    base_dir = os.path.dirname(__file__)
+    env_file_path = os.path.join(base_dir, '.env')
+    env_data = dotenv_values(env_file_path)
 
-def load_model(model, file_path):
-    model.load_state_dict(torch.load(file_path))
+    env_data[key] = value
+
+    with open(env_file_path, "w") as file:
+        for k, v in env_data.items():
+            file.write(f"{k}={v}\n")
+
+def save_model(model):
+    base_dir = os.path.dirname(__file__)
+    models_dir = os.path.join(base_dir, '../models')
+    model_path = os.path.join(models_dir, 'ncf_model.pth')
+    torch.save(model.state_dict(), model_path)
+
+def load_model(model):
+    base_dir = os.path.dirname(__file__)
+    models_dir = os.path.join(base_dir, '../models')
+    model_path = os.path.join(models_dir, 'ncf_model.pth')
+    model.load_state_dict(torch.load(model_path))
     model.eval()
     return model
 
@@ -122,14 +163,24 @@ class NCFWithDemographics(nn.Module):
 
 new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data = retrieve_all_new_data()
 
-n_users = len(new_merged_data['user_id'].unique())
-n_items = len(new_songs_data['track_id'].unique())
+n_users = os.getenv('n_users')
+num_items = os.getenv('num_items')
 n_factors = 20
-n_genres = len(new_merged_data['preferred_genre'].unique())
-n_languages = len(new_merged_data['preferred_language'].unique())
+n_genres = os.getenv('n_genres')
+n_languages = os.getenv('n_languages')
 
-model = NCFWithDemographics(n_users, n_items, n_factors, n_genres, n_languages)
-model = load_model(model, 'ncf_model.pth')
+model = NCFWithDemographics(n_users, num_items, n_factors, n_genres, n_languages)
+model = load_model(model)
+
+n_users = len(db["users"].distinct("user_id"))
+num_items = len(db["songs"].distinct("track_id"))
+n_genres = len(db["user_activity"].distinct("preferred_genre"))
+n_languages = len(db["user_activity"].distinct("preferred_language"))
+
+update_env_file("n_users", n_users)
+update_env_file("num_items", num_items)
+update_env_file("n_genres", n_genres)
+update_env_file("n_languages", n_languages)
 
 model = fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data)
-save_model(model, 'ncf_model.pth')
+save_model(model)

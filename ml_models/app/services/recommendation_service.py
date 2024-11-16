@@ -9,9 +9,14 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 import pickle
 import os
+from dotenv import load_dotenv
 
-client = MongoClient("mongodb+srv://b22ai015:mel7iKthsBpNR6d3@msrmd.tgazz.mongodb.net/?retryWrites=true&w=majority&appName=MsRmd")
-db = client["data_ms"]
+load_dotenv()
+DATABASE = os.getenv('MONGO_DATABASE')
+MONGODB_URI = os.getenv('MONGO_URI')
+
+client = MongoClient(MONGODB_URI)
+db = client[DATABASE]
 
 class NCFWithDemographics(nn.Module):
     def __init__(self, n_users, n_items, n_factors, n_genres, n_languages):
@@ -119,11 +124,11 @@ def retrieve_user_info(user_id):
 
 def get_recommendations(user_id):
     user_id = int(user_id)
-    n_users = 999
-    num_items = 395386
+    n_users = int(os.getenv('n_users'))
+    num_items = int(os.getenv('num_items'))
     n_factors = 20
-    n_genres=18
-    n_languages = 1
+    n_genres= int(os.getenv('n_genres'))
+    n_languages = int(os.getenv('n_languages'))
     model, genre_encoder, language_encoder = load_model_and_encoders(
         n_users, num_items, n_factors, n_genres, n_languages
     )

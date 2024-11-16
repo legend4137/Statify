@@ -1,6 +1,9 @@
 from flask import Flask, jsonify, request
 from services.recommendation_service import get_recommendations
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 app = Flask(__name__)
 
 @app.route('/predict', methods=['POST'])
