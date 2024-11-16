@@ -1,0 +1,20 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8000:8000"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "4567:4567"
+    env_file:
+      - ./backend/.env
+
+  ml_models:
+    build:
+      context: ./ml_models
+    ports:
+      - "5000:5000"
