@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var userActivityCollection = config.GetCollection(config.ConnectDB(), "user_activity")
+var userActivityCollection = config.GetCollection(config.DB, "user_activity")
 var userCollection = config.GetCollection(config.DB, "users")
 
 func AddTrackToUserActivity(userID string, trackID int) (string, error) {
@@ -42,7 +43,7 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 	filter = bson.M{"track_id": trackID}
 	var audio_features models.Song
 	// Execute the query
-	err = songsCollection.FindOne(context.TODO(), filter).Decode(&result)
+	err = songsCollection.FindOne(context.TODO(), filter).Decode(&audio_features)
 	if err == mongo.ErrNoDocuments {
 		return "", fmt.Errorf("song with track_id %d not found", trackID)
 	} else if err != nil {
@@ -53,6 +54,8 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 	filter = bson.M{"user_id": convertedUserID}
 	var userActivity models.UserActivity
 	err = userActivityCollection.FindOne(context.TODO(), filter).Decode(&userActivity)
+
+	now := time.Now()
 
 	if err == mongo.ErrNoDocuments {
 		// User doesn't exist, create a new document
@@ -65,6 +68,8 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 			Preferred_Language: "Unknown",
 			Age:              age,
 			Language:         "Unknown",
+			CreatedAt: 	      now,
+			UpdatedAt:		  now,
 		}
 
 		_, err := userActivityCollection.InsertOne(context.TODO(), newUser)
@@ -90,7 +95,7 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 	filter = bson.M{"user_id": convertedUserID}
 	var user_activity models.UserActivity
 	// Execute the query
-	err = userActivityCollection.FindOne(context.TODO(), filter).Decode(&result)
+	err = userActivityCollection.FindOne(context.TODO(), filter).Decode(&user_activity)
 	if err == mongo.ErrNoDocuments {
 		return "", fmt.Errorf("user_activity with user_id %d not found", convertedUserID)
 	} else if err != nil {
@@ -98,12 +103,6 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 	}
 	mod_energy := (user_activity.Mood_Energy * float64(len(user_activity.Tracks)) + float64(audio_features.Energy))/float64((len(userActivity.Tracks)+1))
 	mod_valence := (user_activity.Mood_Valence * float64(len(user_activity.Tracks)) + float64(audio_features.Valence))/float64((len(userActivity.Tracks)+1))
-	// log.Println("Converted user_id:", convertedUserID)
-	// log.Println("user_activity:", user_activity)
-	// log.Println(float64(audio_features.Energy))
-	// log.Println(mod_energy)
-	// log.Println(float64(audio_features.Valence))
-	// log.Println(mod_valence)
 
 	// Add the track to the user's activity
 	update := bson.M{
@@ -111,6 +110,7 @@ func AddTrackToUserActivity(userID string, trackID int) (string, error) {
 		"$set": bson.M{
 			"mood_energy":  mod_energy,
 			"mood_valence": mod_valence,
+			"updated_at": 	now,
 		},
 	}
 

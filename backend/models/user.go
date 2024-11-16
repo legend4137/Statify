@@ -1,6 +1,9 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
+)
 
 type User struct {
 	ID               primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
@@ -11,6 +14,8 @@ type User struct {
 	UserName         string             `bson:"user_name" json:"user_name"`
 	UserAge          int                `bson:"user_age" json:"user_age"`
 	UserGender       string             `bson:"user_gender" json:"user_gender"`
+	CreatedAt        time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt        time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
 type UserActivity struct {
@@ -23,6 +28,8 @@ type UserActivity struct {
 	Preferred_Language string             `bson:"preferred_language" json:"preferred_language"`
 	Age                int                `bson:"user_age" json:"user_age"`
 	Language           string             `bson:"user_langugage" json:"user_language"`
+	CreatedAt        time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt        time.Time          `bson:"updated_at" json:"updated_at"`
 }
 
 type LoginRequest struct {

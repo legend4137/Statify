@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,9 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	counterCollection = config.GetCollection(config.ConnectDB(), "counters")
-)
+var counterCollection = config.GetCollection(config.ConnectDB(), "counters")
 
 // getNextSequence gets the next auto-incrementing ID
 func getNextSequence(sequenceName string) (int, error) {
@@ -67,6 +66,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	now := time.Now()
+
 	// Create new user
 	newUser := models.User{
 		ID:               primitive.NewObjectID(),
@@ -77,6 +78,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		UserName:         req.UserName,
 		UserAge:          req.UserAge,
 		UserGender:       req.UserGender,
+		CreatedAt: 	      now,
+		UpdatedAt:		  now,
 	}
 
 	newUserActivity := models.UserActivity{
@@ -89,6 +92,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		Preferred_Language: req.UserName,
 		Age:                req.UserAge,
 		Language:           req.UserSongLanguage,
+		CreatedAt: 	      now,
+		UpdatedAt:		  now,
 	}
 
 	_, err = userCollection.InsertOne(context.TODO(), newUser)

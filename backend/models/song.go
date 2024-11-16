@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // Song represents the song details structure.
 type Spotify_Song struct {
 	Id         string `json:"id"`
@@ -24,4 +26,6 @@ type Song struct {
 	Language string `bson:"language"`
 	Valence float64 `bson:"valence"`
 	Energy  float64 `bson:"energy"`
+	CreatedAt        time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt        time.Time          `bson:"updated_at" json:"updated_at"`
 }

@@ -1,20 +1,20 @@
 package services
 
 import (
-	"backend/models"
 	"backend/config"
+	"backend/models"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	// "io"
 	"log"
 	"net/http"
 	"net/url"
-	"context"
+	"time"
 
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	flaskURL = "http://localhost:5000/predict"
 )
 
-var songsCollection = config.GetCollection(config.ConnectDB(), "songs")
+var songsCollection = config.GetCollection(config.DB, "songs")
 
 // Fetch songs from MongoDB by track_id
 func FetchSongsFromMongo(trackIDs []int) ([]models.Song, error) {
@@ -65,13 +65,17 @@ func AddSongToCollection(spotifySong models.Spotify_Song) (int, error) {
 	}
 	newTrackID := int(count) + 1
 
+	now := time.Now()
+
 	// Create a new Song object for insertion
 	newSong := models.Song{
 		TrackID:  newTrackID,
-		Track:    spotifySong.Track,
-		Artist:   spotifySong.Artist,
-		Valence:  spotifySong.Valence,
-		Energy:   spotifySong.Energy,
+		Track:     spotifySong.Track,
+		Artist:    spotifySong.Artist,
+		Valence:   spotifySong.Valence,
+		Energy:    spotifySong.Energy,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	// Insert the new song into MongoDB
