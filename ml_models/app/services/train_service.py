@@ -7,6 +7,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 import os
 from dotenv import load_dotenv, dotenv_values
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from datetime import datetime
 
 load_dotenv()
 DATABASE = os.getenv('MONGO_DATABASE')
@@ -15,20 +18,31 @@ MONGODB_URI = os.getenv('MONGO_URI')
 client = MongoClient(MONGODB_URI)
 db = client[DATABASE]
 
+spark = SparkSession.builder \
+    .appName("RetrieveDataFromMongoDB") \
+    .config("spark.mongodb.input.uri", MONGODB_URI) \
+    .config("spark.mongodb.output.uri", MONGODB_URI) \
+    .getOrCreate()
 
-def retrieve_all_new_data():
-    ratings_data = pd.DataFrame(list(db["buffer_ratings"].find()))
-    songs_data = pd.DataFrame(list(db["buffer_songs"].find()))
-    activity_data = pd.DataFrame(list(db["buffer_user_activity"].find()))
-    user_data = pd.DataFrame(list(db["buffer_users"].find()))
+def retrieve_all_new_data_spark(since):
+    since_timestamp = since.strftime('%Y-%m-%dT%H:%M:%S')
 
-    user_song_ratings = pd.pivot_table(ratings_data, values='rating', index='user_id', columns='track_id').fillna(0)
+    ratings_data = spark.read.format("mongo").option("collection", "ratings").load().filter(col("created_at") > since_timestamp)
+    songs_data = spark.read.format("mongo").option("collection", "songs").load().filter(col("created_at") > since_timestamp)
+    activity_data = spark.read.format("mongo").option("collection", "user_activity").load().filter(col("created_at") > since_timestamp)
 
-    user_ids, track_ids = np.nonzero(user_song_ratings)
-    ratings = [user_song_ratings.iloc[user, track] for user, track in zip(user_ids, track_ids)]
-    merged_data = ratings_data.merge(activity_data, on="user_id", how="left").merge(user_data, on="user_id", how="left")
-    
-    return user_ids, track_ids, np.array(ratings), songs_data, merged_data
+    user_song_ratings = ratings_data.groupBy("user_id", "track_id").pivot("track_id").agg({"rating": "first"}).fillna(0)
+
+    user_ids = user_song_ratings.select("user_id").distinct().rdd.flatMap(lambda x: x).collect()
+    track_ids = user_song_ratings.columns[1:] 
+    ratings = user_song_ratings.rdd.flatMap(lambda row: [row[i] for i in range(1, len(row))]).collect()
+
+    genres = activity_data.select("preferred_genre").distinct().rdd.flatMap(lambda x: x).collect()
+    languages = activity_data.select("preferred_language").distinct().rdd.flatMap(lambda x: x).collect()
+    ages = activity_data.select("user_age").distinct().rdd.flatMap(lambda x: x).collect()
+    genders = activity_data.select("user_gender").distinct().rdd.flatMap(lambda x: x).collect()
+
+    return user_ids, track_ids, ratings, songs_data, genres, languages, ages, genders
 
 class RatingDataset(torch.utils.data.Dataset):
     def __init__(self, user_ids, track_ids, ratings, genres, languages, ages, genders):
@@ -69,7 +83,7 @@ def update_model_embeddings(model, n_users, n_items, n_genres, n_languages):
         
     return model
 
-def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data, n_users, n_items, n_genres, n_languages):
+def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, genres, languages, ages, genders, n_users, n_items, n_genres, n_languages):
     model = update_model_embeddings(model, n_users, n_items, n_genres, n_languages)
 
     for param in model.parameters():
@@ -83,10 +97,7 @@ def fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_d
 
     new_train_dataset = RatingDataset(
         new_user_ids, new_track_ids, new_ratings,
-        new_merged_data.get('preferred_genre', []),
-        new_merged_data.get('preferred_language', []),
-        new_merged_data.get('user_age', []),
-        new_merged_data.get('user_gender', [])
+        genres, languages, ages, genders
     )
     new_train_loader = DataLoader(new_train_dataset, batch_size=256, shuffle=True)
 
@@ -161,16 +172,8 @@ class NCFWithDemographics(nn.Module):
         x = torch.relu(self.fc2(x))
         return torch.sigmoid(self.output(x))
 
-new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data = retrieve_all_new_data()
-
-n_users = os.getenv('n_users')
-num_items = os.getenv('num_items')
-n_factors = 20
-n_genres = os.getenv('n_genres')
-n_languages = os.getenv('n_languages')
-
-model = NCFWithDemographics(n_users, num_items, n_factors, n_genres, n_languages)
-model = load_model(model)
+since_date = datetime(2024, 11, 16)
+new_user_ids, new_track_ids, new_ratings, new_songs_data, genres, languages, ages, genders = retrieve_all_new_data_spark(since_date)
 
 n_users = len(db["users"].distinct("user_id"))
 num_items = len(db["songs"].distinct("track_id"))
@@ -182,5 +185,10 @@ update_env_file("num_items", num_items)
 update_env_file("n_genres", n_genres)
 update_env_file("n_languages", n_languages)
 
-model = fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, new_merged_data)
+n_factors = 20
+model = NCFWithDemographics(n_users, num_items, n_factors, n_genres, n_languages)
+model = load_model(model)
+
+model = fine_tune_model(model, new_user_ids, new_track_ids, new_ratings, new_songs_data, genres, languages, ages, genders, n_users, num_items, n_genres, n_languages)
+
 save_model(model)
